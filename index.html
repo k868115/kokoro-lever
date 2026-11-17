@@ -66,23 +66,27 @@ textarea{width:100%;min-height:110px;resize:vertical;font:inherit;font-size:14.5
  .memo{overflow:visible}.stages{overflow:visible}
 }
 @media print{
- @page{size:A4;margin:14mm}
- body{background:#fff}
- .app{display:block;height:auto;padding:0}
- .panel{box-shadow:none;border:none}
- .lever{padding:0}
- .dial{width:300px}
- h1{min-height:0;margin:4px 0}
- button,.memo-head,.stages,.eyebrow,.dlg{display:none!important}
- .print-only{display:block}
- .ph{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);border-bottom:1px solid #ccc;padding-bottom:6px;margin-bottom:10px}
- .ph b{color:var(--ink);font-size:15px}
- .pm{margin-top:14px;text-align:left}
- .pm h3{font-size:14px;margin:12px 0 4px;padding:3px 8px;background:#f1efeb;border-radius:4px}
- .pm p{white-space:pre-wrap;font-size:12.5px;line-height:1.7;margin:0 0 4px;padding:0 8px;break-inside:avoid}
+ @page{size:A4;margin:15mm 16mm}
+ html,body{height:auto;background:#fff}
+ .app,.dlg{display:none!important}
+ #pr{display:block!important;font-size:12.5px;color:var(--ink)}
+ #pr .ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid var(--ink);padding-bottom:5px;margin-bottom:10px}
+ #pr .ph b{font-size:16px}
+ #pr .ph span{font-size:12px;color:var(--muted)}
+ #pr .sum{display:grid;grid-template-columns:62mm 1fr;gap:6mm;align-items:center;border:1px solid #cfcac2;border-radius:3mm;padding:4mm 5mm;break-inside:avoid;margin-bottom:6mm}
+ #pr .sum svg{width:100%;height:auto}
+ #pr .q{font-size:11px;color:var(--muted);margin:0 0 2px}
+ #pr .st{font-size:14px;font-weight:700;margin:0 0 6px;line-height:1.5}
+ #pr .pc{display:flex;gap:8mm}
+ #pr .pc div{font-size:11px;font-weight:700}
+ #pr .pc b{display:block;font-size:26px;line-height:1.1}
+ #pr .sec{margin-bottom:4mm;border:1px solid #cfcac2;border-radius:2mm;min-height:62mm;padding-bottom:3mm;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+ #pr .sec h3{font-size:13px;margin:0 0 2.5mm;padding:1.8mm 4mm;background:#efece7;border-radius:2mm 2mm 0 0;break-after:avoid}
+ #pr .sec p{white-space:pre-wrap;word-break:break-word;line-height:1.75;margin:0;padding:0 4mm;orphans:3;widows:3}
+ #pr .sec p.none{color:var(--muted)}
 }
 </style></head><body>
-<div class="print-only ph"><b>『こころ』模擬法廷　裁判官メモ</b><span id="pInfo"></span></div>
+<div id="pr" class="print-only"></div>
 <div class="app">
 <section class="panel lever">
 <p class="eyebrow">『こころ』模擬法廷 ／ 裁判官の意見</p>
@@ -114,7 +118,6 @@ textarea{width:100%;min-height:110px;resize:vertical;font:inherit;font-size:14.5
 </div>
 <div class="readings" aria-hidden="true"><div class="reading k"><div class="name">K自身の側</div><div class="value"><span id="kv">50</span><small>％</small></div></div><div class="reading s"><div class="name">先生の行為の側</div><div class="value"><span id="sv">50</span><small>％</small></div></div></div>
 <div class="lever-tools"><button id="reset" type="button">スタートに戻す</button></div>
-<div class="print-only pm" id="pMemo"></div>
 </section>
 
 <section class="panel memo" aria-labelledby="memoTitle">
@@ -146,8 +149,8 @@ const initialStance=stanceEl.textContent,initialColor=stanceEl.style.color;docum
 render();
 
 /* ---- 裁判官メモ ---- */
-const STAGES=['最初の主張','質問・応答','最後の主張を班で相談','最後の主張'];
-const KEY='kokoro-lever-memo-v2';
+const STAGES=['最初の主張','質問・応答','最後の主張'];
+const KEY='kokoro-lever-memo-v3';
 const store={get(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}},set(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}};
 const saved=store.get();
 const who=document.getElementById('who');who.value=saved.who||'';
@@ -175,9 +178,14 @@ const _render=render;render=function(){_render();save();};
 /* ---- PDF書き出し（印刷 → PDFとして保存） ---- */
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 function fillPrint(){
- const d=new Date(),ds=d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate();
- document.getElementById('pInfo').textContent=ds+'　'+(who.value?'名前：'+who.value:'');
- document.getElementById('pMemo').innerHTML=STAGES.map((t,i)=>'<h3>'+(i+1)+'　'+t+'</h3><p>'+(esc(areas[i].value.trim())||'（メモなし）')+'</p>').join('');
+ const d=new Date(),ds=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+ const gh=svg.outerHTML.replace(/arcGrad/g,'pArcGrad').replace(/"shadow"/g,'"pShadow"').replace(/#shadow/g,'#pShadow').replace(/ id="(svg|ticks|slider|needleG|focusRing|knob|hit)"/g,'').replace(/<rect[^>]*><\/rect>|<rect[^>]*\/>/g,'');
+ const pr=document.getElementById('pr');
+ pr.innerHTML='<div class="ph"><b>『こころ』模擬法廷　裁判官メモ</b><span>'+ds+(who.value.trim()?'　名前：'+esc(who.value.trim()):'')+'</span></div>'
+  +'<div class="sum"><div class="g"></div><div><p class="q">Kの死の原因を、どちらに見るか。</p><p class="st">'+(touched?stance(value):'（レバーは動かしていません）')+'</p>'
+  +'<div class="pc"><div class="k">K自身の側<b>'+(100-value)+'％</b></div><div class="s">先生の行為の側<b>'+value+'％</b></div></div></div></div>'
+  +STAGES.map((t,i)=>{const v=areas[i].value.trim();return '<div class="sec"><h3>'+(i+1)+'　'+t+'</h3><p'+(v?'':' class="none"')+'>'+(v?esc(v):'（メモなし）')+'</p></div>';}).join('');
+ pr.querySelector('.g').innerHTML=gh;
 }
 window.addEventListener('beforeprint',fillPrint);
 function doPrint(){
